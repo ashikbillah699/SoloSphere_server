@@ -1,9 +1,9 @@
 const express = require('express')
 const cors = require('cors')
-const { MongoClient, ServerApiVersion } = require('mongodb')
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb')
 require('dotenv').config()
 
-const port = process.env.PORT || 9000
+const port = process.env.PORT || 5000
 const app = express()
 
 app.use(cors())
@@ -22,16 +22,64 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-    // Send a ping to confirm a successful connection
-    await client.db('admin').command({ ping: 1 })
-    console.log(
-      'Pinged your deployment. You successfully connected to MongoDB!'
-    )
-  } finally {
+    const jobCollection = client.db('soloDB').collection('jobs');
+
+    app.get('/allJobs', async(req, res)=>{
+      const result = await jobCollection.find().toArray();
+      res.send(result);
+    })
+
+    app.get('/allJobs/:email', async(req, res)=>{
+      const email = req.params.email;
+      console.log(email);
+      const query = {'buyer.email':email};
+      const result = await jobCollection.find(query).toArray();
+      res.send(result);
+    })
+
+    app.get('/job/:id', async(req, res)=>{
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)};
+      const result = await jobCollection.findOne(query);
+      res.send(result);
+    })
+
+    app.post('/addJob', async(req, res)=>{
+      console.log(req.body);
+      const recevedData = req.body;
+      const result = await jobCollection.insertOne(recevedData);
+      res.send(result);
+      console.log(result)
+    })
+
+    app.put('/update/:id', async(req, res)=>{
+      const id = req.params.id;
+      const filter = {_id: new ObjectId(id)}
+      const jobdata = req.body
+      const options = {upsert:true}
+      const updateData ={
+        $set: jobdata
+      }
+      const result = await jobCollection.updateOne(filter, updateData, options);
+      res.send(result);
+      console.log(result)
+    })
+
+    app.delete('/job/:id', async(req, res)=>{
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)};
+      const result = await jobCollection.deleteOne(query);
+      res.send(result);
+    })
+
+    console.log('Pinged your deployment. You successfully connected to MongoDB!')
+  }
+  finally {
     // Ensures that the client will close when you finish/error
   }
 }
 run().catch(console.dir)
+
 app.get('/', (req, res) => {
   res.send('Hello from SoloSphere Server....')
 })
