@@ -23,6 +23,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     const jobCollection = client.db('soloDB').collection('jobs');
+    const bidsCollection = client.db('soloDB').collection('bids');
 
     app.get('/allJobs', async(req, res)=>{
       const result = await jobCollection.find().toArray();
